@@ -10,5 +10,4 @@ public record UpdateFieldMappingCommand(
     string SourcePath,
     string TargetPath,
     string? DefaultValue,
-    int Order,
     ServiceType ServiceType) : IRequest<FieldMappingDto>;

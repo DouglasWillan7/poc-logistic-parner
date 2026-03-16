@@ -19,6 +19,16 @@ public class FieldMappingsController(IMediator mediator) : ControllerBase
         return Created($"/api/partners/{partnerId}/field-mappings/{result.Id}", result);
     }
 
+    [HttpPost("batch")]
+    public async Task<IActionResult> CreateBatch(Guid partnerId, [FromBody] CreateFieldMappingsBatchCommand command, CancellationToken cancellationToken)
+    {
+        if (partnerId != command.PartnerId)
+            return BadRequest("Route partnerId does not match command partnerId");
+
+        var result = await mediator.Send(command, cancellationToken);
+        return Created($"/api/partners/{partnerId}/field-mappings", result);
+    }
+
     [HttpPut("{mappingId:guid}")]
     public async Task<IActionResult> Update(Guid partnerId, Guid mappingId, [FromBody] UpdateFieldMappingCommand command, CancellationToken cancellationToken)
     {

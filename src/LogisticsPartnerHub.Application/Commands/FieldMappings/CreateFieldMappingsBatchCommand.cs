@@ -4,10 +4,13 @@ using MediatR;
 
 namespace LogisticsPartnerHub.Application.Commands.FieldMappings;
 
-public record CreateFieldMappingCommand(
-    Guid PartnerId,
+public record FieldMappingItem(
     MappingDirection Direction,
     string SourcePath,
     string TargetPath,
     string? DefaultValue,
-    ServiceType ServiceType) : IRequest<FieldMappingDto>;
+    ServiceType ServiceType);
+
+public record CreateFieldMappingsBatchCommand(
+    Guid PartnerId,
+    List<FieldMappingItem> Mappings) : IRequest<IEnumerable<FieldMappingDto>>;

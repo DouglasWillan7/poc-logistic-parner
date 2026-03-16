@@ -1,5 +1,6 @@
 using LogisticsPartnerHub.Application.DTOs;
 using LogisticsPartnerHub.Domain.Entities;
+using LogisticsPartnerHub.Domain.Enums;
 using LogisticsPartnerHub.Domain.Interfaces.Repositories;
 using MediatR;
 
@@ -15,6 +16,11 @@ public class CreateFieldMappingHandler(
         var partner = await partnerRepository.GetByIdAsync(request.PartnerId, cancellationToken)
             ?? throw new KeyNotFoundException($"Partner {request.PartnerId} not found");
 
+        var existingMappings = await fieldMappingRepository.GetByPartnerAndServiceTypeAsync(
+            partner.Id, request.ServiceType, request.Direction, cancellationToken);
+
+        var nextOrder = existingMappings.Any() ? existingMappings.Max(m => m.Order) + 1 : 0;
+
         var mapping = new FieldMapping
         {
             Id = Guid.NewGuid(),
@@ -23,7 +29,7 @@ public class CreateFieldMappingHandler(
             SourcePath = request.SourcePath,
             TargetPath = request.TargetPath,
             DefaultValue = request.DefaultValue,
-            Order = request.Order,
+            Order = nextOrder,
             ServiceType = request.ServiceType
         };
 

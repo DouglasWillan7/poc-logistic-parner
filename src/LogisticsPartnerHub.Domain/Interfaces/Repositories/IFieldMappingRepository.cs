@@ -11,6 +11,7 @@ public interface IFieldMappingRepository
     Task<IEnumerable<FieldMapping>> GetByPartnerIdAsync(Guid partnerId, CancellationToken cancellationToken = default);
     Task<FieldMapping?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task AddAsync(FieldMapping mapping, CancellationToken cancellationToken = default);
+    Task AddRangeAsync(IEnumerable<FieldMapping> mappings, CancellationToken cancellationToken = default);
     void Update(FieldMapping mapping);
     void Delete(FieldMapping mapping);
 }

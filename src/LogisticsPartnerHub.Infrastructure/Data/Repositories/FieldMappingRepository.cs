@@ -26,6 +26,9 @@ public class FieldMappingRepository(LogisticsPartnerDbContext context) : IFieldM
     public async Task AddAsync(FieldMapping mapping, CancellationToken cancellationToken = default)
         => await context.FieldMappings.AddAsync(mapping, cancellationToken);
 
+    public async Task AddRangeAsync(IEnumerable<FieldMapping> mappings, CancellationToken cancellationToken = default)
+        => await context.FieldMappings.AddRangeAsync(mappings, cancellationToken);
+
     public void Update(FieldMapping mapping)
         => context.FieldMappings.Update(mapping);
 

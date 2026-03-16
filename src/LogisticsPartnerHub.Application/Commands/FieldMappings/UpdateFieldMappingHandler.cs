@@ -17,7 +17,6 @@ public class UpdateFieldMappingHandler(
         mapping.SourcePath = request.SourcePath;
         mapping.TargetPath = request.TargetPath;
         mapping.DefaultValue = request.DefaultValue;
-        mapping.Order = request.Order;
         mapping.ServiceType = request.ServiceType;
 
         fieldMappingRepository.Update(mapping);
