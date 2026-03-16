@@ -160,16 +160,15 @@ O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
 - **Enums**: `ServiceType`, `ServiceOrderStatus`, `AuthType`, `MappingDirection`
 - **Interfaces de repositório**: `IPartnerRepository`, `IFieldMappingRepository`, `IServiceOrderRepository`, `IServiceOrderLogRepository`, `IPartnerEndpointRepository`
 - **Interfaces de serviço**: `IPayloadTransformer`, `IPartnerAuthenticator`, `IPartnerNotifier`
-- **Eventos de domínio**: `ServiceOrderCreatedEvent`, `ServiceOrderStatusChangedEvent`, `ServiceOrderFailedEvent`
+- **Eventos de domínio**: (planejado para implementação futura)
 
 ### Application
 - **Commands (CQRS via MediatR)**:
   - `CreateServiceOrderCommand` → recebe solicitação do Monitor
   - `ProcessServiceOrderCommand` → transforma e envia ao parceiro
   - `HandleWebhookCommand` → processa callback do parceiro
-  - `RetryServiceOrderCommand` → reprocessa solicitação falhada
   - `CreatePartnerCommand` / `UpdatePartnerCommand` → CRUD de parceiros
-  - `CreateFieldMappingCommand` / `UpdateFieldMappingCommand` → CRUD de mapeamentos
+  - `CreateFieldMappingCommand` / `CreateFieldMappingsBatchCommand` / `UpdateFieldMappingCommand` → CRUD de mapeamentos (individual e em lote)
   - `CreatePartnerEndpointCommand` / `UpdatePartnerEndpointCommand` → CRUD de endpoints
 - **Queries**:
   - `GetServiceOrderQuery` / `GetServiceOrdersQuery`
@@ -178,7 +177,6 @@ O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
 - **Services**:
   - `PayloadTransformerService` — aplica o de-para via JsonPath nos campos (outbound e inbound), construindo objetos aninhados
   - `JsonPathBuilder` — utilitário para extrair valores via JsonPath e construir JSON com objetos aninhados
-  - `PartnerDispatcherService` — orquestra envio ao parceiro com autenticação
 
 ### Infrastructure.Data
 - **DbContext**: `LogisticsPartnerDbContext`
@@ -214,6 +212,7 @@ O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
 | GET | `/api/partners` | Lista parceiros |
 | GET | `/api/partners/{id}` | Detalhe do parceiro |
 | POST | `/api/partners/{id}/field-mappings` | Configura mapeamento de campos |
+| POST | `/api/partners/{id}/field-mappings/batch` | Configura mapeamentos em lote |
 | PUT | `/api/partners/{id}/field-mappings/{mappingId}` | Atualiza mapeamento |
 | GET | `/api/partners/{id}/field-mappings` | Lista mapeamentos |
 | POST | `/api/partners/{id}/endpoints` | Configura endpoint por serviço |
@@ -247,7 +246,7 @@ O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
 ## Passos de implementação
 
 ### Fase 1 — Estrutura do projeto
-1. Criar solution .NET 8 com Clean Architecture:
+1. Criar solution .NET 10 com Clean Architecture:
    - `LogisticsPartnerHub.Domain`
    - `LogisticsPartnerHub.Application`
    - `LogisticsPartnerHub.Infrastructure`
@@ -301,7 +300,7 @@ O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
 ## Stack tecnológica
 | Componente | Tecnologia |
 |-----------|------------|
-| Runtime | .NET 8 |
+| Runtime | .NET 10 |
 | API | ASP.NET Core Minimal APIs ou Controllers |
 | ORM | Entity Framework Core |
 | Banco de dados | PostgreSQL |

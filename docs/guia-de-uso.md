@@ -343,8 +343,10 @@ Quando o parceiro atualiza o status (ex: recolhimento concluido), ele envia um P
 curl -X POST http://localhost:5000/api/webhooks/$PARTNER_ID \
   -H "Content-Type: application/json" \
   -d '{
-    "id_pedido": "MONITOR-OS-001",
-    "estado": "Concluido",
+    "dados": {
+      "estado": "Concluido",
+      "id_pedido": "MONITOR-OS-001"
+    },
     "observacao": "Recolhimento realizado com sucesso"
   }'
 ```
@@ -400,6 +402,7 @@ curl -X POST http://localhost:5000/api/webhooks/$PARTNER_ID \
 | `GET` | `/api/partners` | Lista parceiros |
 | `GET` | `/api/partners/{id}` | Detalhe do parceiro |
 | `POST` | `/api/partners/{id}/field-mappings` | Cria mapeamento de campos |
+| `POST` | `/api/partners/{id}/field-mappings/batch` | Cria mapeamentos em lote |
 | `PUT` | `/api/partners/{id}/field-mappings/{mappingId}` | Atualiza mapeamento |
 | `GET` | `/api/partners/{id}/field-mappings` | Lista mapeamentos |
 | `POST` | `/api/partners/{id}/endpoints` | Cria endpoint do parceiro |
