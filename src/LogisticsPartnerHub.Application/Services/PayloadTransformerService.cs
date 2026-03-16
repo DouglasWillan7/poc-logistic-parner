@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using LogisticsPartnerHub.Domain.Enums;
 using LogisticsPartnerHub.Domain.Interfaces.Repositories;
 using LogisticsPartnerHub.Domain.Interfaces.Services;
@@ -14,25 +15,25 @@ public class PayloadTransformerService(IFieldMappingRepository fieldMappingRepos
         var mappings = await fieldMappingRepository.GetByPartnerAndServiceTypeAsync(
             partnerId, serviceType, MappingDirection.Outbound, cancellationToken);
 
-        var sourceJson = JsonDocument.Parse(canonicalPayload);
-        var result = new Dictionary<string, JsonElement>();
+        var source = JsonNode.Parse(canonicalPayload) ?? new JsonObject();
+        var result = new JsonObject();
 
-        var mappingDict = mappings.ToDictionary(m => m.SourceField, m => m.TargetField);
-
-        foreach (var property in sourceJson.RootElement.EnumerateObject())
+        foreach (var mapping in mappings)
         {
-            if (mappingDict.TryGetValue(property.Name, out var targetField))
+            var value = JsonPathBuilder.ExtractValue(source, mapping.SourcePath);
+
+            if (value is null && mapping.DefaultValue is not null)
             {
-                result[targetField] = property.Value;
+                value = JsonPathBuilder.ParseDefaultValue(mapping.DefaultValue);
             }
-            else
+
+            if (value is not null)
             {
-                // Campos sem mapeamento são mantidos com o nome original
-                result[property.Name] = property.Value;
+                JsonPathBuilder.SetValue(result, mapping.TargetPath, value);
             }
         }
 
-        return JsonSerializer.Serialize(result);
+        return result.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
 
     public async Task<string> TransformInboundAsync(
@@ -42,23 +43,24 @@ public class PayloadTransformerService(IFieldMappingRepository fieldMappingRepos
         var mappings = await fieldMappingRepository.GetByPartnerAndServiceTypeAsync(
             partnerId, serviceType, MappingDirection.Inbound, cancellationToken);
 
-        var sourceJson = JsonDocument.Parse(partnerPayload);
-        var result = new Dictionary<string, JsonElement>();
+        var source = JsonNode.Parse(partnerPayload) ?? new JsonObject();
+        var result = new JsonObject();
 
-        var mappingDict = mappings.ToDictionary(m => m.SourceField, m => m.TargetField);
-
-        foreach (var property in sourceJson.RootElement.EnumerateObject())
+        foreach (var mapping in mappings)
         {
-            if (mappingDict.TryGetValue(property.Name, out var targetField))
+            var value = JsonPathBuilder.ExtractValue(source, mapping.SourcePath);
+
+            if (value is null && mapping.DefaultValue is not null)
             {
-                result[targetField] = property.Value;
+                value = JsonPathBuilder.ParseDefaultValue(mapping.DefaultValue);
             }
-            else
+
+            if (value is not null)
             {
-                result[property.Name] = property.Value;
+                JsonPathBuilder.SetValue(result, mapping.TargetPath, value);
             }
         }
 
-        return JsonSerializer.Serialize(result);
+        return result.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
 }

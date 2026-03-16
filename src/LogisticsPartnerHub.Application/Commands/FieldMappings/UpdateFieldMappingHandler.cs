@@ -14,8 +14,10 @@ public class UpdateFieldMappingHandler(
             ?? throw new KeyNotFoundException($"FieldMapping {request.Id} not found");
 
         mapping.Direction = request.Direction;
-        mapping.SourceField = request.SourceField;
-        mapping.TargetField = request.TargetField;
+        mapping.SourcePath = request.SourcePath;
+        mapping.TargetPath = request.TargetPath;
+        mapping.DefaultValue = request.DefaultValue;
+        mapping.Order = request.Order;
         mapping.ServiceType = request.ServiceType;
 
         fieldMappingRepository.Update(mapping);
@@ -23,6 +25,7 @@ public class UpdateFieldMappingHandler(
 
         return new FieldMappingDto(
             mapping.Id, mapping.PartnerId, mapping.Direction,
-            mapping.SourceField, mapping.TargetField, mapping.ServiceType);
+            mapping.SourcePath, mapping.TargetPath, mapping.DefaultValue,
+            mapping.Order, mapping.ServiceType);
     }
 }

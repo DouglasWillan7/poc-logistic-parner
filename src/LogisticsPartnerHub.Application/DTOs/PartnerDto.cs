@@ -15,8 +15,10 @@ public record FieldMappingDto(
     Guid Id,
     Guid PartnerId,
     MappingDirection Direction,
-    string SourceField,
-    string TargetField,
+    string SourcePath,
+    string TargetPath,
+    string? DefaultValue,
+    int Order,
     ServiceType ServiceType);
 
 public record PartnerEndpointDto(

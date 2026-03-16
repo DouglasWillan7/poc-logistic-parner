@@ -83,15 +83,40 @@ Envio ao parceiro falha
 | CreatedAt | DateTime | Data de criação |
 | UpdatedAt | DateTime | Última atualização |
 
-### FieldMapping (Mapeamento de campos)
+### FieldMapping (Mapeamento de campos via JsonPath)
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
 | Id | Guid | PK |
 | PartnerId | Guid | FK → Partner |
 | Direction | enum | Outbound (envio) / Inbound (webhook) |
-| SourceField | string | Campo no modelo canônico (ex: `pickup_address`) |
-| TargetField | string | Campo no payload do parceiro (ex: `endereco_retirada`) |
+| SourcePath | string | JsonPath de leitura no payload de origem (ex: `$.client_name`, `$.dados.estado`) |
+| TargetPath | string | JsonPath de escrita no payload de destino (ex: `$.cliente.nome`, `$.status`) |
+| DefaultValue | string? | Valor padrão quando source é nulo (ex: `false`, `"REBOQUE"`, `0`) |
+| Order | int | Ordem de processamento dos mapeamentos |
 | ServiceType | enum | Recolhimento, FreteMoto, FretePecas |
+
+#### Exemplo de mapeamento outbound (Soon/ReboqueMe)
+O payload canônico do Monitor é flat:
+```json
+{ "protocol": "548478548725777", "client_name": "henrique", "client_phone": "31888888111", "vehicle_brand": "Jeep", ... }
+```
+
+Os mapeamentos constroem o payload aninhado para a API do parceiro:
+| SourcePath | TargetPath | Resultado |
+|---|---|---|
+| `$.protocol` | `$.ownId` | `{ "ownId": "548478548725777" }` |
+| `$.client_name` | `$.cliente.nome` | `{ "cliente": { "nome": "henrique" } }` |
+| `$.client_phone` | `$.cliente.telefoneCelular` | `{ "cliente": { "telefoneCelular": "31888888111" } }` |
+| `$.vehicle_brand` | `$.veiculoCliente.marca` | `{ "veiculoCliente": { "marca": "Jeep" } }` |
+| `$.origin_lat` | `$.enderecoOrigem.latitude` | `{ "enderecoOrigem": { "latitude": -23.570193 } }` |
+| (nulo) | `$.situacaoVeiculo.capotado` | DefaultValue: `false` |
+
+#### Exemplo de mapeamento inbound (webhook)
+O parceiro envia payload aninhado, e o mapeamento extrai para formato canônico:
+| SourcePath | TargetPath | Efeito |
+|---|---|---|
+| `$.dados.estado` | `$.status` | Extrai de objeto aninhado para raiz |
+| `$.dados.identificador` | `$.order_id` | Extrai de objeto aninhado para raiz |
 
 ### ServiceOrder (Solicitação de serviço)
 | Campo | Tipo | Descrição |
@@ -151,7 +176,8 @@ Envio ao parceiro falha
   - `GetPartnerQuery` / `GetPartnersQuery`
   - `GetFieldMappingsQuery`
 - **Services**:
-  - `PayloadTransformerService` — aplica o de-para nos campos (outbound e inbound)
+  - `PayloadTransformerService` — aplica o de-para via JsonPath nos campos (outbound e inbound), construindo objetos aninhados
+  - `JsonPathBuilder` — utilitário para extrair valores via JsonPath e construir JSON com objetos aninhados
   - `PartnerDispatcherService` — orquestra envio ao parceiro com autenticação
 
 ### Infrastructure.Data

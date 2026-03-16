@@ -34,7 +34,7 @@ public class CreateServiceOrderHandlerTests
         _serviceOrderRepository.GetByExternalIdAsync("EXT-001", Arg.Any<CancellationToken>()).Returns((ServiceOrder?)null);
         _partnerRepository.GetByIdAsync(partnerId, Arg.Any<CancellationToken>()).Returns(partner);
         _fieldMappingRepository.GetByPartnerAndServiceTypeAsync(partnerId, ServiceType.Recolhimento, MappingDirection.Outbound, Arg.Any<CancellationToken>())
-            .Returns(new List<FieldMapping> { new() { SourceField = "field", TargetField = "campo" } });
+            .Returns(new List<FieldMapping> { new() { SourcePath = "$.field", TargetPath = "$.campo" } });
         _endpointRepository.GetByPartnerAndServiceTypeAsync(partnerId, ServiceType.Recolhimento, Arg.Any<CancellationToken>())
             .Returns(new PartnerEndpoint { Path = "/api/pickups", HttpMethod = "POST" });
         _unitOfWork.SaveChangesAsync(Arg.Any<CancellationToken>()).Returns(1);
@@ -127,7 +127,7 @@ public class CreateServiceOrderHandlerTests
         _serviceOrderRepository.GetByExternalIdAsync("EXT-004", Arg.Any<CancellationToken>()).Returns((ServiceOrder?)null);
         _partnerRepository.GetByIdAsync(partnerId, Arg.Any<CancellationToken>()).Returns(partner);
         _fieldMappingRepository.GetByPartnerAndServiceTypeAsync(partnerId, ServiceType.FretePecas, MappingDirection.Outbound, Arg.Any<CancellationToken>())
-            .Returns(new List<FieldMapping> { new() { SourceField = "a", TargetField = "b" } });
+            .Returns(new List<FieldMapping> { new() { SourcePath = "$.a", TargetPath = "$.b" } });
         _endpointRepository.GetByPartnerAndServiceTypeAsync(partnerId, ServiceType.FretePecas, Arg.Any<CancellationToken>())
             .Returns((PartnerEndpoint?)null);
 

@@ -156,73 +156,92 @@ curl -X POST http://localhost:5000/api/partners \
 }
 ```
 
-### 3.2 Configurar mapeamento de campos (de-para) - OUTBOUND
+### 3.2 Configurar mapeamento de campos (de-para) via JsonPath - OUTBOUND
 
-O mapeamento Outbound transforma o payload canonico (vindo do Monitor) para o formato do parceiro.
+O mapeamento Outbound transforma o payload canonico (vindo do Monitor) para o formato do parceiro usando **JsonPath**.
 
-Exemplo: o Monitor envia `pickup_address`, mas o parceiro TransLog espera `endereco_retirada`.
+Isso permite construir objetos aninhados complexos. O `sourcePath` indica de onde ler o valor no payload canonico, e o `targetPath` indica onde escrever no payload de saida.
 
 ```bash
 PARTNER_ID="a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 
-# Mapeamento: pickup_address -> endereco_retirada
+# Mapeamento flat: pickup_address -> endereco_retirada
 curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$PARTNER_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"pickup_address\",
-    \"targetField\": \"endereco_retirada\",
+    \"sourcePath\": \"\$.pickup_address\",
+    \"targetPath\": \"\$.endereco_retirada\",
+    \"order\": 0,
     \"serviceType\": \"Recolhimento\"
   }"
 
-# Mapeamento: vehicle_plate -> placa_veiculo
+# Mapeamento com objeto aninhado: client_name -> cliente.nome
 curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$PARTNER_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"vehicle_plate\",
-    \"targetField\": \"placa_veiculo\",
+    \"sourcePath\": \"\$.client_name\",
+    \"targetPath\": \"\$.cliente.nome\",
+    \"order\": 1,
     \"serviceType\": \"Recolhimento\"
   }"
 
-# Mapeamento: contact_phone -> telefone_contato
+# Mapeamento com objeto aninhado: client_phone -> cliente.telefoneCelular
 curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$PARTNER_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"contact_phone\",
-    \"targetField\": \"telefone_contato\",
+    \"sourcePath\": \"\$.client_phone\",
+    \"targetPath\": \"\$.cliente.telefoneCelular\",
+    \"order\": 2,
+    \"serviceType\": \"Recolhimento\"
+  }"
+
+# Mapeamento com valor padrao (quando o campo nao existe no payload canonico)
+curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"partnerId\": \"$PARTNER_ID\",
+    \"direction\": \"Outbound\",
+    \"sourcePath\": \"\$.is_capsized\",
+    \"targetPath\": \"\$.situacaoVeiculo.capotado\",
+    \"defaultValue\": \"false\",
+    \"order\": 3,
     \"serviceType\": \"Recolhimento\"
   }"
 ```
 
-### 3.3 Configurar mapeamento de campos (de-para) - INBOUND
+### 3.3 Configurar mapeamento de campos (de-para) via JsonPath - INBOUND
 
 O mapeamento Inbound transforma o payload do webhook do parceiro para o formato canonico do Hub.
+Tambem suporta leitura de objetos aninhados via JsonPath.
 
 ```bash
-# Mapeamento reverso: estado -> status
+# Mapeamento reverso: dados.estado -> status (le de objeto aninhado)
 curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$PARTNER_ID\",
     \"direction\": \"Inbound\",
-    \"sourceField\": \"estado\",
-    \"targetField\": \"status\",
+    \"sourcePath\": \"\$.dados.estado\",
+    \"targetPath\": \"\$.status\",
+    \"order\": 0,
     \"serviceType\": \"Recolhimento\"
   }"
 
-# Mapeamento reverso: id_pedido -> order_id
+# Mapeamento reverso: dados.id_pedido -> order_id (le de objeto aninhado)
 curl -X POST http://localhost:5000/api/partners/$PARTNER_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$PARTNER_ID\",
     \"direction\": \"Inbound\",
-    \"sourceField\": \"id_pedido\",
-    \"targetField\": \"order_id\",
+    \"sourcePath\": \"\$.dados.id_pedido\",
+    \"targetPath\": \"\$.order_id\",
+    \"order\": 1,
     \"serviceType\": \"Recolhimento\"
   }"
 ```
@@ -275,23 +294,28 @@ curl -X POST http://localhost:5000/api/service-orders \
 
 **O que acontece nos bastidores:**
 
-O Background Job (`ServiceOrderProcessorJob`) busca ordens com status `Solicitado` a cada 5 segundos, aplica o de-para e envia ao parceiro:
+O Background Job (`ServiceOrderProcessorJob`) busca ordens com status `Solicitado` a cada 5 segundos, aplica o de-para via JsonPath e envia ao parceiro:
 
 ```
-Payload do Monitor:
+Payload do Monitor (flat):
 {
   "pickup_address": "Rua Augusta, 1500 - Sao Paulo",
-  "vehicle_plate": "ABC1D23",
-  "contact_phone": "11999998888"
+  "client_name": "henrique",
+  "client_phone": "31888888111"
 }
 
-          ↓ de-para outbound ↓
+          ↓ de-para outbound via JsonPath ↓
 
-Payload enviado ao parceiro TransLog:
+Payload enviado ao parceiro (com objetos aninhados):
 {
   "endereco_retirada": "Rua Augusta, 1500 - Sao Paulo",
-  "placa_veiculo": "ABC1D23",
-  "telefone_contato": "11999998888"
+  "cliente": {
+    "nome": "henrique",
+    "telefoneCelular": "31888888111"
+  },
+  "situacaoVeiculo": {
+    "capotado": false
+  }
 }
 ```
 
@@ -414,7 +438,7 @@ curl -X POST http://localhost:5000/api/partners \
   }'
 # Anote o id retornado -> RAPIDLOG_ID
 
-# 2. Mapeamentos outbound
+# 2. Mapeamentos outbound (usando JsonPath)
 RAPIDLOG_ID="<id-retornado>"
 
 curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
@@ -422,8 +446,9 @@ curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
   -d "{
     \"partnerId\": \"$RAPIDLOG_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"origin_address\",
-    \"targetField\": \"from\",
+    \"sourcePath\": \"\$.origin_address\",
+    \"targetPath\": \"\$.from\",
+    \"order\": 0,
     \"serviceType\": \"FreteMoto\"
   }"
 
@@ -432,8 +457,9 @@ curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
   -d "{
     \"partnerId\": \"$RAPIDLOG_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"destination_address\",
-    \"targetField\": \"to\",
+    \"sourcePath\": \"\$.destination_address\",
+    \"targetPath\": \"\$.to\",
+    \"order\": 1,
     \"serviceType\": \"FreteMoto\"
   }"
 
@@ -442,19 +468,21 @@ curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
   -d "{
     \"partnerId\": \"$RAPIDLOG_ID\",
     \"direction\": \"Outbound\",
-    \"sourceField\": \"package_description\",
-    \"targetField\": \"desc\",
+    \"sourcePath\": \"\$.package_description\",
+    \"targetPath\": \"\$.desc\",
+    \"order\": 2,
     \"serviceType\": \"FreteMoto\"
   }"
 
-# 3. Mapeamentos inbound (webhook)
+# 3. Mapeamentos inbound (webhook, usando JsonPath)
 curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
   -H "Content-Type: application/json" \
   -d "{
     \"partnerId\": \"$RAPIDLOG_ID\",
     \"direction\": \"Inbound\",
-    \"sourceField\": \"delivery_status\",
-    \"targetField\": \"status\",
+    \"sourcePath\": \"\$.delivery_status\",
+    \"targetPath\": \"\$.status\",
+    \"order\": 0,
     \"serviceType\": \"FreteMoto\"
   }"
 
@@ -463,8 +491,9 @@ curl -X POST http://localhost:5000/api/partners/$RAPIDLOG_ID/field-mappings \
   -d "{
     \"partnerId\": \"$RAPIDLOG_ID\",
     \"direction\": \"Inbound\",
-    \"sourceField\": \"ref\",
-    \"targetField\": \"order_id\",
+    \"sourcePath\": \"\$.ref\",
+    \"targetPath\": \"\$.order_id\",
+    \"order\": 1,
     \"serviceType\": \"FreteMoto\"
   }"
 

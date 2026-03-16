@@ -20,8 +20,10 @@ public class CreateFieldMappingHandler(
             Id = Guid.NewGuid(),
             PartnerId = partner.Id,
             Direction = request.Direction,
-            SourceField = request.SourceField,
-            TargetField = request.TargetField,
+            SourcePath = request.SourcePath,
+            TargetPath = request.TargetPath,
+            DefaultValue = request.DefaultValue,
+            Order = request.Order,
             ServiceType = request.ServiceType
         };
 
@@ -30,6 +32,7 @@ public class CreateFieldMappingHandler(
 
         return new FieldMappingDto(
             mapping.Id, mapping.PartnerId, mapping.Direction,
-            mapping.SourceField, mapping.TargetField, mapping.ServiceType);
+            mapping.SourcePath, mapping.TargetPath, mapping.DefaultValue,
+            mapping.Order, mapping.ServiceType);
     }
 }

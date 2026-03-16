@@ -12,6 +12,7 @@ public class FieldMappingRepository(LogisticsPartnerDbContext context) : IFieldM
         CancellationToken cancellationToken = default)
         => await context.FieldMappings
             .Where(f => f.PartnerId == partnerId && f.ServiceType == serviceType && f.Direction == direction)
+            .OrderBy(f => f.Order)
             .ToListAsync(cancellationToken);
 
     public async Task<IEnumerable<FieldMapping>> GetByPartnerIdAsync(Guid partnerId, CancellationToken cancellationToken = default)

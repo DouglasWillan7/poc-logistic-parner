@@ -7,6 +7,8 @@ namespace LogisticsPartnerHub.Application.Commands.FieldMappings;
 public record CreateFieldMappingCommand(
     Guid PartnerId,
     MappingDirection Direction,
-    string SourceField,
-    string TargetField,
+    string SourcePath,
+    string TargetPath,
+    string? DefaultValue,
+    int Order,
     ServiceType ServiceType) : IRequest<FieldMappingDto>;

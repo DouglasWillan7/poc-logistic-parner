@@ -37,7 +37,7 @@ public class GetFieldMappingsHandler(IFieldMappingRepository fieldMappingReposit
     {
         var mappings = await fieldMappingRepository.GetByPartnerIdAsync(request.PartnerId, cancellationToken);
         return mappings.Select(m => new FieldMappingDto(
-            m.Id, m.PartnerId, m.Direction, m.SourceField, m.TargetField, m.ServiceType));
+            m.Id, m.PartnerId, m.Direction, m.SourcePath, m.TargetPath, m.DefaultValue, m.Order, m.ServiceType));
     }
 }
 
